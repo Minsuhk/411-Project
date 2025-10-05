@@ -20,8 +20,21 @@ struct ContentView: View {
         }
         
         //This is for the searchbar
+        //We want to edit this part later on so that a valid location from google maps is selectable
+        //Upon selecting, we send the name of the location to the LocationView while also changing screen to LocationView
+        //LocationView will display info from database about name, address, picture of location(?), and passcode for it
         NavigationStack {
- 
+            //This is for the google map stuff??
+//            VStack(spacing: 12) {
+//                GoogleMapView(center: .init(lattitude: 33.8830,
+//                                            longitude: -117.8850)
+//                )
+//                .frame(height: 320)
+//                .clipShape(RoundedRectangle(cornerRadius: 12))
+//                .shadow(radius: 3)
+//                Spacer()
+//            }
+//            .padding(.horizontal)
         }
         .navigationTitle("Restroom Runner")
         .navigationBarTitleDisplayMode(.large)
@@ -31,13 +44,9 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.horizontal)
         
-        
-        
-        
         //End of body
     }
 }
-
 #Preview {
     ContentView()
 }

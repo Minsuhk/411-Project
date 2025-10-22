@@ -1,45 +1,41 @@
 import Foundation
 import CoreLocation
+import FirebaseFirestore
 
+// This ViewModel validates and creates a new Bathroom object.
 class AddPinViewModel {
     
-    /// An enumeration for specific validation errors.
-    enum ValidationError: Error, LocalizedError {
+    // This will hold the coordinate passed from the map
+    var coordinate: CLLocationCoordinate2D?
+    
+    // Validation error enum
+    enum ValidationError: Error {
         case missingName
-        case missingCode
         case missingCoordinate
-        
-        var errorDescription: String? {
-            switch self {
-            case .missingName:
-                return "Please enter a name for the location."
-            case .missingCode:
-                return "Please enter the bathroom code."
-            case .missingCoordinate:
-                return "There was an error getting the location's coordinate."
-            }
-        }
     }
     
-    /// Validates input and creates a `BathroomAnnotation`.
-    /// - Throws: A `ValidationError` if any required field is missing.
-    /// - Returns: A new `BathroomAnnotation` instance.
-    func createBathroomAnnotation(name: String?, code: String?, notes: String?, isUnisex: Bool, coordinate: CLLocationCoordinate2D?) throws -> BathroomAnnotation {
+    // Creates a new Bathroom data object
+    func createBathroom(name: String?, code: String?, notes: String?, isUnisex: Bool) throws -> Bathroom {
         
-        guard let coordinate = coordinate else {
-            throw ValidationError.missingCoordinate
-        }
-        
-        guard let name = name, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard let name = name, !name.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw ValidationError.missingName
         }
         
-        guard let code = code, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw ValidationError.missingCode
+        guard let coordinate = self.coordinate else {
+            throw ValidationError.missingCoordinate
         }
         
-        let finalNotes = notes ?? ""
+        // Create the Firestore GeoPoint
+        let geoPoint = GeoPoint(latitude: coordinate.latitude, longitude: coordinate.longitude)
         
-        return BathroomAnnotation(title: name, code: code, notes: finalNotes, isUnisex: isUnisex, coordinate: coordinate)
+        // Create and return the new Bathroom struct
+        return Bathroom(
+            name: name,
+            code: code,
+            notes: notes,
+            isUnisex: isUnisex,
+            location: geoPoint
+        )
     }
 }
+

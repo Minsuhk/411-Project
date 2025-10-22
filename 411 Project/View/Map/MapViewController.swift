@@ -1,9 +1,10 @@
 import UIKit
 import MapKit
 import CoreLocation
+import FirebaseFirestore
 
 // This is the main view controller that displays the map.
-class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
+class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate, MapViewModelDelegate { // <-- Add MapViewModelDelegate
 
     // MARK: - UI Properties
     private let mapView: MKMapView = {
@@ -25,6 +26,7 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         setupMapView()
         setupLocationManager()
         setupGestureRecognizers()
+        setupViewModel() // <-- Add this
         
         // Add a button to re-center on user's location
         let locationButton = UIBarButtonItem(
@@ -45,6 +47,13 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     }
 
     // MARK: - Setup
+    
+    // --- 1. Setup the ViewModel ---
+    private func setupViewModel() {
+        viewModel.delegate = self
+        viewModel.fetchBathrooms() // Start listening for pins
+    }
+    
     private func setupMapView() {
         view.addSubview(mapView)
         mapView.delegate = self
@@ -74,11 +83,6 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     // MARK: - Actions
     @objc private func addPinAtCurrentLocation() {
         if let userLocation = locationManager.location?.coordinate {
-            // Check if the coordinate is valid
-            guard CLLocationCoordinate2DIsValid(userLocation) else {
-                print("Cannot add pin: User location is invalid.")
-                return
-            }
             // We have the location, present the add pin screen
             presentAddPinScreen(at: userLocation)
         } else {
@@ -96,13 +100,14 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     
     @objc private func centerOnUserLocation() {
         if let location = locationManager.location?.coordinate {
-            // Check if the coordinate is valid before creating a region
-            if CLLocationCoordinate2DIsValid(location) {
-                let region = MKCoordinateRegion(center: location, latitudinalMeters: 1000, longitudinalMeters: 1000)
-                mapView.setRegion(region, animated: true)
-            } else {
+            // --- FIX for NaN Error ---
+            guard CLLocationCoordinate2DIsValid(location) else {
                 print("Invalid coordinate received from location manager.")
+                return
             }
+            // --- End of Fix ---
+            let region = MKCoordinateRegion(center: location, latitudinalMeters: 1000, longitudinalMeters: 1000)
+            mapView.setRegion(region, animated: true)
         }
     }
     
@@ -115,27 +120,22 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         let touchPoint = gestureRecognizer.location(in: mapView)
         let touchMapCoordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
         
-        // Check if the converted coordinate is valid
-        guard CLLocationCoordinate2DIsValid(touchMapCoordinate) else {
-            print("Invalid coordinate from long press.")
-            return
-        }
-        
         // Present the AddPinViewController
         presentAddPinScreen(at: touchMapCoordinate)
     }
     
-    // Helper function to present the Add Pin screen
+    // --- 2. Create a single function to present the AddPin screen ---
     private func presentAddPinScreen(at coordinate: CLLocationCoordinate2D) {
         let addPinVC = AddPinViewController()
-        
-        // Set the coordinate directly on the view controller
-        addPinVC.coordinate = coordinate
+        let addPinViewModel = AddPinViewModel()
+        addPinViewModel.coordinate = coordinate // Pass coordinate to the ViewModel
+        addPinVC.viewModel = addPinViewModel
         
         // Set up a closure to get the new bathroom data back
-        addPinVC.onSave = { [weak self] newBathroomAnnotation in
-            self?.viewModel.addBathroom(annotation: newBathroomAnnotation)
-            self?.addPinToMap(annotation: newBathroomAnnotation) // Update the UI
+        // This 'onSave' closure now returns a 'Bathroom' model, not an annotation
+        addPinVC.onSave = { [weak self] newBathroom in
+            // --- 3. Use the new 'addBathroom' method ---
+            self?.viewModel.addBathroom(bathroom: newBathroom)
         }
         
         // Present it modally
@@ -143,23 +143,22 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         present(navigationController, animated: true)
     }
     
-    private func addPinToMap(annotation: BathroomAnnotation) {
-        // This function is now just responsible for the UI update.
-        // The ViewModel handles the data management.
-        mapView.addAnnotation(annotation)
-    }
+    // (This function is no longer needed, 'didFetchBathrooms' handles it)
+    // private func addPinToMap(annotation: BathroomAnnotation) { ... }
 
     // MARK: - CLLocationManagerDelegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         // Center the map on the user's location the first time it's found.
         if let location = locations.first {
-            // Check if the coordinate is valid before creating a region
-            if CLLocationCoordinate2DIsValid(location.coordinate) {
-                let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 1500, longitudinalMeters: 1500)
-                mapView.setRegion(region, animated: true)
-            } else {
-                print("Invalid coordinate received from didUpdateLocations.")
+            // --- FIX for NaN Error ---
+            guard CLLocationCoordinate2DIsValid(location.coordinate) else {
+                print("Invalid coordinate received from location manager.")
+                return
             }
+            // --- End of Fix ---
+            
+            let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 1500, longitudinalMeters: 1500)
+            mapView.setRegion(region, animated: true)
             
             // Stop updating location to save battery
             locationManager.stopUpdatingLocation()
@@ -170,10 +169,38 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         print("Failed to get user's location: \(error.localizedDescription)")
     }
     
+    // MARK: - MapViewModelDelegate
+    
+    // --- 4. Implement the delegate method ---
+    // This function will be called by the ViewModel whenever the pins are updated
+    func didFetchBathrooms(_ bathrooms: [Bathroom]) {
+        // 1. Remove all old pins (except the user's blue dot)
+        let allAnnotations = self.mapView.annotations
+        if let userAnnotation = self.mapView.userLocation as MKAnnotation? {
+            let otherAnnotations = allAnnotations.filter { $0.title != userAnnotation.title }
+            self.mapView.removeAnnotations(otherAnnotations)
+        } else {
+            self.mapView.removeAnnotations(allAnnotations)
+        }
+        
+        // 2. Create new BathroomAnnotation objects from the Bathroom models
+        let newAnnotations = bathrooms.map { bathroom -> BathroomAnnotation in
+            return BathroomAnnotation(bathroom: bathroom)
+        }
+        
+        // 3. Add the new pins to the map
+        self.mapView.addAnnotations(newAnnotations)
+    }
+
     // MARK: - MKMapViewDelegate
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         // Don't customize the user's blue dot
         guard !(annotation is MKUserLocation) else {
+            return nil
+        }
+        
+        // Handle our custom BathroomAnnotation
+        guard let bathroomAnnotation = annotation as? BathroomAnnotation else {
             return nil
         }
         
@@ -190,6 +217,10 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         // Customize the pin
         annotationView?.markerTintColor = .systemBlue
         annotationView?.glyphImage = UIImage(systemName: "toilet.fill")
+        
+        // Set the callout details from the annotation's bathroom model
+        annotationView?.titleVisibility = .visible
+        annotationView?.subtitleVisibility = .visible
         
         return annotationView
     }

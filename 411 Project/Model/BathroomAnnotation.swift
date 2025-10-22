@@ -1,29 +1,32 @@
-
+import Foundation
 import MapKit
+import FirebaseFirestore
 
-/// A custom map annotation to represent a bathroom location.
-/// It inherits from MKPointAnnotation to be easily added to a map.
+// This class represents a pin on the map.
 class BathroomAnnotation: MKPointAnnotation {
     
-    let code: String
-    let notes: String
-    let isUnisex: Bool
+    // We'll store the full Bathroom object here.
+    let bathroom: Bathroom
 
-    /// Initializes a new BathroomAnnotation.
-    init(title: String, code: String, notes: String, isUnisex: Bool, coordinate: CLLocationCoordinate2D) {
-        self.code = code
-        self.notes = notes
-        self.isUnisex = isUnisex
+    // Initialize the annotation with our Bathroom data model
+    init(bathroom: Bathroom) {
+        self.bathroom = bathroom
         
         super.init()
         
-        // Properties inherited from MKPointAnnotation
-        self.title = title
-        self.coordinate = coordinate
+        // Set the properties for the map annotation
+        self.coordinate = bathroom.coordinate
+        self.title = bathroom.name
         
-        // Set the subtitle property directly, rather than overriding it.
-        // This resolves the build error.
-        self.subtitle = "Code: \(code)"
+        // Create a subtitle from the other details
+        var subtitleText = ""
+        if let code = bathroom.code, !code.isEmpty {
+            subtitleText += "Code: \(code)"
+        }
+        if bathroom.isUnisex {
+            subtitleText += (subtitleText.isEmpty ? "" : " | ") + "Unisex"
+        }
+        self.subtitle = subtitleText
     }
 }
 

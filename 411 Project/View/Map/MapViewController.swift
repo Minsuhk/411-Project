@@ -18,8 +18,33 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
+        class PaddedLabel: UILabel {
+            var textInsets = UIEdgeInsets(top:8, left:12, bottom:8, right:12)
+            override func drawText(in rect: CGRect) {
+                let insetRect = rect.inset(by: textInsets)
+                super.drawText(in: insetRect)
+            }
+            override var intrinsicContentSize: CGSize {
+                let size = super.intrinsicContentSize
+                return CGSize (
+                    width: size.width + textInsets.left + textInsets.right,
+                    height: size.height + textInsets.top + textInsets.bottom
+                )
+            }
+        }
         super.viewDidLoad()
-        title = "Bathroom Codes"
+        let titleLabel = PaddedLabel()
+        titleLabel.text = "Restroom Runner"
+        titleLabel.font = UIFont.boldSystemFont(ofSize: 30)
+        titleLabel.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
+        titleLabel.layer.cornerRadius = 10
+        titleLabel.layer.masksToBounds = true
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.7 // or some value
+        titleLabel.textAlignment = .center
+        
+        navigationItem.titleView = titleLabel
+        
         view.backgroundColor = .white
                 
         setupMapView()

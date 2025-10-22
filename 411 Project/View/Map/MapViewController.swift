@@ -27,13 +27,28 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         setupGestureRecognizers()
         
         // Add a button to re-center on user's location
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "location.fill"), style: .plain, target: self, action: #selector(centerOnUserLocation))
+        let locationButton = UIBarButtonItem(
+            image: UIImage(systemName: "location.fill"),
+            style: .plain,
+            target: self,
+            action: #selector(centerOnUserLocation)
+        )
+        self.navigationItem.rightBarButtonItem = locationButton
+        
+        // Button to add pin at current location
+        let addPinButton = UIBarButtonItem(
+            barButtonSystemItem: .add,
+            target: self,
+            action: #selector(addPinAtCurrentLocation)
+        )
+        self.navigationItem.leftBarButtonItem = addPinButton
     }
 
     // MARK: - Setup
     private func setupMapView() {
         view.addSubview(mapView)
         mapView.delegate = self
+        mapView.showsUserLocation = true
         
         NSLayoutConstraint.activate([
             mapView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -57,10 +72,37 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     }
 
     // MARK: - Actions
+    @objc private func addPinAtCurrentLocation() {
+        if let userLocation = locationManager.location?.coordinate {
+            // Check if the coordinate is valid
+            guard CLLocationCoordinate2DIsValid(userLocation) else {
+                print("Cannot add pin: User location is invalid.")
+                return
+            }
+            // We have the location, present the add pin screen
+            presentAddPinScreen(at: userLocation)
+        } else {
+            // This will be called if permissions are denied or location is not yet found
+            print("Cannot add pin: User location is not available.")
+            let alert = UIAlertController(
+                title: "Location Not Found",
+                message: "We can't find your current location to add a pin. Please make sure location services are enabled and try again.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
+    }
+    
     @objc private func centerOnUserLocation() {
         if let location = locationManager.location?.coordinate {
-            let region = MKCoordinateRegion(center: location, latitudinalMeters: 1000, longitudinalMeters: 1000)
-            mapView.setRegion(region, animated: true)
+            // Check if the coordinate is valid before creating a region
+            if CLLocationCoordinate2DIsValid(location) {
+                let region = MKCoordinateRegion(center: location, latitudinalMeters: 1000, longitudinalMeters: 1000)
+                mapView.setRegion(region, animated: true)
+            } else {
+                print("Invalid coordinate received from location manager.")
+            }
         }
     }
     
@@ -73,9 +115,22 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         let touchPoint = gestureRecognizer.location(in: mapView)
         let touchMapCoordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
         
+        // Check if the converted coordinate is valid
+        guard CLLocationCoordinate2DIsValid(touchMapCoordinate) else {
+            print("Invalid coordinate from long press.")
+            return
+        }
+        
         // Present the AddPinViewController
+        presentAddPinScreen(at: touchMapCoordinate)
+    }
+    
+    // Helper function to present the Add Pin screen
+    private func presentAddPinScreen(at coordinate: CLLocationCoordinate2D) {
         let addPinVC = AddPinViewController()
-        addPinVC.coordinate = touchMapCoordinate
+        
+        // Set the coordinate directly on the view controller
+        addPinVC.coordinate = coordinate
         
         // Set up a closure to get the new bathroom data back
         addPinVC.onSave = { [weak self] newBathroomAnnotation in
@@ -98,8 +153,13 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         // Center the map on the user's location the first time it's found.
         if let location = locations.first {
-            let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 1500, longitudinalMeters: 1500)
-            mapView.setRegion(region, animated: true)
+            // Check if the coordinate is valid before creating a region
+            if CLLocationCoordinate2DIsValid(location.coordinate) {
+                let region = MKCoordinateRegion(center: location.coordinate, latitudinalMeters: 1500, longitudinalMeters: 1500)
+                mapView.setRegion(region, animated: true)
+            } else {
+                print("Invalid coordinate received from didUpdateLocations.")
+            }
             
             // Stop updating location to save battery
             locationManager.stopUpdatingLocation()

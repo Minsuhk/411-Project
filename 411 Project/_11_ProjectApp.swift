@@ -1,10 +1,3 @@
-//
-//  _11_ProjectApp.swift
-//  411 Project
-//
-//  Created by csuftitan on 10/1/25.
-//
-
 import SwiftUI
 
 @main

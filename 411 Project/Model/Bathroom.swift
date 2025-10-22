@@ -1,8 +1,13 @@
-//
-//  Bathroom.swift
-//  411 Project
-//
-//  Created by csuftitan on 10/2/25.
-//
+import Foundation
 
-// Data struct for ids, coords, bathroom codes, owner, timestamp, and other info
+// This struct defines the basic data model for a bathroom.
+// It's separate from the map annotation, keeping the data and view logic separate.
+struct Bathroom {
+    let id: UUID
+    let name: String
+    let code: String
+    let notes: String?
+    let isUnisex: Bool
+    // You would also include latitude and longitude here.
+}
+

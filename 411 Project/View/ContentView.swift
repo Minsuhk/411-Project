@@ -4,7 +4,7 @@ import UIKit
 // This SwiftUI view will act as the bridge to your UIKit components.
 struct ContentView: View {
     var body: some View {
-        MapViewControllerRepresentable() // Allows the map to extend to the screen edges
+        MapViewControllerRepresentable().ignoresSafeArea() // Allows the map to extend to the screen edges
     }
 }
 

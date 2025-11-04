@@ -18,10 +18,48 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
+        class PaddedLabel: UILabel {
+            var textInsets = UIEdgeInsets(top:8, left:12, bottom:8, right:12)
+            override func drawText(in rect: CGRect) {
+                let insetRect = rect.inset(by: textInsets)
+                super.drawText(in: insetRect)
+            }
+            override var intrinsicContentSize: CGSize {
+                let size = super.intrinsicContentSize
+                return CGSize (
+                    width: size.width + textInsets.left + textInsets.right,
+                    height: size.height + textInsets.top + textInsets.bottom
+                )
+            }
+        }
         super.viewDidLoad()
-        title = "Bathroom Codes"
+        
+        let titleLabel = PaddedLabel()
+        titleLabel.text = "Restroom Runner"
+        titleLabel.font = UIFont.boldSystemFont(ofSize: 30)
+        titleLabel.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
+        titleLabel.layer.cornerRadius = 10
+        titleLabel.layer.masksToBounds = true
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.7 // or some value
+        titleLabel.textAlignment = .center
+        
+        navigationItem.titleView = titleLabel
+        
         view.backgroundColor = .white
-                
+        automaticallyAdjustsScrollViewInsets = false // Important for older iOS versions, but good practice
+        edgesForExtendedLayout = [.top, .bottom]
+        extendedLayoutIncludesOpaqueBars = true
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithTransparentBackground()
+        navigationController?.navigationBar.standardAppearance = navAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = navAppearance
+        navigationController?.navigationBar.compactAppearance = navAppearance
+        navigationController?.navigationBar.isTranslucent = true
+        
+        view.insetsLayoutMarginsFromSafeArea = false
+        mapView.insetsLayoutMarginsFromSafeArea = false
+        
         setupMapView()
         setupLocationManager()
         setupGestureRecognizers()
@@ -34,9 +72,13 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     private func setupMapView() {
         view.addSubview(mapView)
         mapView.delegate = self
+        mapView.translatesAutoresizingMaskIntoConstraints = false
+        mapView.layoutMargins =  .zero
+        mapView.insetsLayoutMarginsFromSafeArea = false
+        
         
         NSLayoutConstraint.activate([
-            mapView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            mapView.topAnchor.constraint(equalTo: view.topAnchor),
             mapView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             mapView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             mapView.trailingAnchor.constraint(equalTo: view.trailingAnchor)

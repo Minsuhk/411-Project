@@ -29,6 +29,6 @@ struct MapViewControllerRepresentable: UIViewControllerRepresentable {
 // A preview provider for Xcode Previews
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView().ignoresSafeArea()//maybe this will do something good for us with the title idk
     }
 }

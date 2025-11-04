@@ -33,6 +33,7 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
             }
         }
         super.viewDidLoad()
+        
         let titleLabel = PaddedLabel()
         titleLabel.text = "Restroom Runner"
         titleLabel.font = UIFont.boldSystemFont(ofSize: 30)
@@ -46,7 +47,19 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
         navigationItem.titleView = titleLabel
         
         view.backgroundColor = .white
-                
+        automaticallyAdjustsScrollViewInsets = false // Important for older iOS versions, but good practice
+        edgesForExtendedLayout = [.top, .bottom]
+        extendedLayoutIncludesOpaqueBars = true
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithTransparentBackground()
+        navigationController?.navigationBar.standardAppearance = navAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = navAppearance
+        navigationController?.navigationBar.compactAppearance = navAppearance
+        navigationController?.navigationBar.isTranslucent = true
+        
+        view.insetsLayoutMarginsFromSafeArea = false
+        mapView.insetsLayoutMarginsFromSafeArea = false
+        
         setupMapView()
         setupLocationManager()
         setupGestureRecognizers()
@@ -59,9 +72,13 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     private func setupMapView() {
         view.addSubview(mapView)
         mapView.delegate = self
+        mapView.translatesAutoresizingMaskIntoConstraints = false
+        mapView.layoutMargins =  .zero
+        mapView.insetsLayoutMarginsFromSafeArea = false
+        
         
         NSLayoutConstraint.activate([
-            mapView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            mapView.topAnchor.constraint(equalTo: view.topAnchor),
             mapView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             mapView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             mapView.trailingAnchor.constraint(equalTo: view.trailingAnchor)

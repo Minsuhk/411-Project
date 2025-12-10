@@ -66,6 +66,32 @@ class AddPinViewController: UIViewController {
         textView.layer.cornerRadius = 5.0
         return textView
     }()
+    
+    private let cleanRatingLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Clean Rating (1–5)"
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        return label
+    }()
+
+    private let cleanRatingControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["1","2","3","4","5"])
+        control.selectedSegmentIndex = 3 // default to 4
+        return control
+    }()
+
+    private let bathroomRatingLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Bathroom Rating (1–5)"
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        return label
+    }()
+
+    private let bathroomRatingControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["1","2","3","4","5"])
+        control.selectedSegmentIndex = 3 // default to 4
+        return control
+    }()
 
 
     // MARK: - Lifecycle
@@ -93,14 +119,18 @@ class AddPinViewController: UIViewController {
             nameLabel, nameTextField,
             codeLabel, codeTextField,
             isUnisexStackView,
+            cleanRatingLabel, cleanRatingControl,
+            bathroomRatingLabel, bathroomRatingControl,
             notesLabel, notesTextView
         ])
         stackView.axis = .vertical
         stackView.spacing = 12
         stackView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Custom spacing after the switch
+        // Custom spacing after key rows
         stackView.setCustomSpacing(20, after: isUnisexStackView)
+        stackView.setCustomSpacing(16, after: cleanRatingControl)
+        stackView.setCustomSpacing(16, after: bathroomRatingControl)
         
         view.addSubview(stackView)
         
@@ -108,7 +138,7 @@ class AddPinViewController: UIViewController {
             stackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            notesTextView.heightAnchor.constraint(equalToConstant: 120) // Give text view a specific height
+            notesTextView.heightAnchor.constraint(equalToConstant: 120)
         ])
     }
 
@@ -124,6 +154,8 @@ class AddPinViewController: UIViewController {
                 code: codeTextField.text,
                 notes: notesTextView.text,
                 isUnisex: isUnisexSwitch.isOn,
+                cleanRating: cleanRatingControl.selectedSegmentIndex + 1,
+                bathroomRating: bathroomRatingControl.selectedSegmentIndex + 1,
                 coordinate: coordinate
             )
             
@@ -133,8 +165,9 @@ class AddPinViewController: UIViewController {
             dismiss(animated: true, completion: nil)
             
         } catch {
-            // If validation fails, show an alert with the specific error message.
-            let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
+            let alert = UIAlertController(title: "Error",
+                                          message: error.localizedDescription,
+                                          preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             present(alert, animated: true)
         }

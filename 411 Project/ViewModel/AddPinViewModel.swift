@@ -24,7 +24,13 @@ class AddPinViewModel {
     /// Validates input and creates a `BathroomAnnotation`.
     /// - Throws: A `ValidationError` if any required field is missing.
     /// - Returns: A new `BathroomAnnotation` instance.
-    func createBathroomAnnotation(name: String?, code: String?, notes: String?, isUnisex: Bool, coordinate: CLLocationCoordinate2D?) throws -> BathroomAnnotation {
+    func createBathroomAnnotation(name: String?,
+                                  code: String?,
+                                  notes: String?,
+                                  isUnisex: Bool,
+                                  cleanRating: Int,
+                                  bathroomRating: Int,
+                                  coordinate: CLLocationCoordinate2D?) throws -> BathroomAnnotation {
         
         guard let coordinate = coordinate else {
             throw ValidationError.missingCoordinate
@@ -40,6 +46,18 @@ class AddPinViewModel {
         
         let finalNotes = notes ?? ""
         
-        return BathroomAnnotation(title: name, code: code, notes: finalNotes, isUnisex: isUnisex, coordinate: coordinate)
+        // Clamp ratings between 1 and 5 to avoid invalid values.
+        let clampedClean = max(1, min(cleanRating, 5))
+        let clampedBathroom = max(1, min(bathroomRating, 5))
+        
+        return BathroomAnnotation(
+            title: name,
+            code: code,
+            notes: finalNotes,
+            isUnisex: isUnisex,
+            cleanRating: clampedClean,
+            bathroomRating: clampedBathroom,
+            coordinate: coordinate
+        )
     }
-}
+    }

@@ -153,27 +153,26 @@ class MapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewD
     }
     
     // MARK: - MKMapViewDelegate
-    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        // Don't customize the user's blue dot
-        guard !(annotation is MKUserLocation) else {
-            return nil
+    // Called when a user taps on a bathroom pin.
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        guard let bathroomAnnotation = view.annotation as? BathroomAnnotation else {
+            return
         }
         
-        let identifier = "BathroomPin"
-        var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier) as? MKMarkerAnnotationView
+        let locationName = bathroomAnnotation.title ?? "Bathroom"
         
-        if annotationView == nil {
-            annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-            annotationView?.canShowCallout = true
-        } else {
-            annotationView?.annotation = annotation
-        }
+        let message = """
+        Location: \(locationName)
+        Clean rating: \(bathroomAnnotation.cleanRating)/5
+        Bathroom rating: \(bathroomAnnotation.bathroomRating)/5
+        Code: \(bathroomAnnotation.code)
+        """
         
-        // Customize the pin
-        annotationView?.markerTintColor = .systemBlue
-        annotationView?.glyphImage = UIImage(systemName: "toilet.fill")
-        
-        return annotationView
+        let alert = UIAlertController(title: "Bathroom Details",
+                                      message: message,
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 

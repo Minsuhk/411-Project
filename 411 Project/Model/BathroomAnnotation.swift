@@ -8,12 +8,27 @@ class BathroomAnnotation: MKPointAnnotation {
     let code: String
     let notes: String
     let isUnisex: Bool
+    
+    /// Rating of how clean the restroom is (for example, 1–5).
+    let cleanRating: Int
+    
+    /// Overall bathroom quality rating (for example, 1–5).
+    let bathroomRating: Int
 
     /// Initializes a new BathroomAnnotation.
-    init(title: String, code: String, notes: String, isUnisex: Bool, coordinate: CLLocationCoordinate2D) {
+    init(title: String,
+         code: String,
+         notes: String,
+         isUnisex: Bool,
+         cleanRating: Int,
+         bathroomRating: Int,
+         coordinate: CLLocationCoordinate2D) {
+        
         self.code = code
         self.notes = notes
         self.isUnisex = isUnisex
+        self.cleanRating = cleanRating
+        self.bathroomRating = bathroomRating
         
         super.init()
         
@@ -21,9 +36,7 @@ class BathroomAnnotation: MKPointAnnotation {
         self.title = title
         self.coordinate = coordinate
         
-        // Set the subtitle property directly, rather than overriding it.
-        // This resolves the build error.
-        self.subtitle = "Code: \(code)"
+        // Short info in the standard callout.
+        self.subtitle = "Code: \(code) • Clean: \(cleanRating)/5"
     }
 }
-

@@ -14,8 +14,20 @@ class AddPinViewModel {
         case missingCoordinate
     }
     
-    // Creates a new Bathroom data object
-    func createBathroom(name: String?, code: String?, notes: String?, isUnisex: Bool) throws -> Bathroom {
+    /// Validates input and creates a `BathroomAnnotation`.
+    /// - Throws: A `ValidationError` if any required field is missing.
+    /// - Returns: A new `BathroomAnnotation` instance.
+    func createBathroomAnnotation(name: String?,
+                                  code: String?,
+                                  notes: String?,
+                                  isUnisex: Bool,
+                                  cleanRating: Int,
+                                  bathroomRating: Int,
+                                  coordinate: CLLocationCoordinate2D?) throws -> BathroomAnnotation {
+        
+        guard let coordinate = coordinate else {
+            throw ValidationError.missingCoordinate
+        }
         
         guard let name = name, !name.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw ValidationError.missingName
@@ -28,13 +40,18 @@ class AddPinViewModel {
         // Create the Firestore GeoPoint
         let geoPoint = GeoPoint(latitude: coordinate.latitude, longitude: coordinate.longitude)
         
-        // Create and return the new Bathroom struct
-        return Bathroom(
-            name: name,
+        // Clamp ratings between 1 and 5 to avoid invalid values.
+        let clampedClean = max(1, min(cleanRating, 5))
+        let clampedBathroom = max(1, min(bathroomRating, 5))
+        
+        return BathroomAnnotation(
+            title: name,
             code: code,
-            notes: notes,
+            notes: finalNotes,
             isUnisex: isUnisex,
-            location: geoPoint
+            cleanRating: clampedClean,
+            bathroomRating: clampedBathroom,
+            coordinate: coordinate
         )
     }
 }

@@ -4,7 +4,7 @@ import UIKit
 // This SwiftUI view will act as the bridge to your UIKit components.
 struct ContentView: View {
     var body: some View {
-        MapViewControllerRepresentable() // Allows the map to extend to the screen edges
+        MapViewControllerRepresentable().ignoresSafeArea() // Allows the map to extend to the screen edges
     }
 }
 
@@ -29,6 +29,6 @@ struct MapViewControllerRepresentable: UIViewControllerRepresentable {
 // A preview provider for Xcode Previews
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        ContentView().ignoresSafeArea()//maybe this will do something good for us with the title idk
     }
 }

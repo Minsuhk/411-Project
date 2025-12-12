@@ -1,32 +1,42 @@
 import Foundation
 import MapKit
-import FirebaseFirestore
 
-// This class represents a pin on the map.
+/// A custom map annotation to represent a bathroom location.
+/// It inherits from MKPointAnnotation to be easily added to a map.
 class BathroomAnnotation: MKPointAnnotation {
     
-    // We'll store the full Bathroom object here.
-    let bathroom: Bathroom
+    let code: String
+    let notes: String
+    let isUnisex: Bool
+    
+    /// Rating of how clean the restroom is (for example, 1–5).
+    let cleanRating: Int
+    
+    /// Overall bathroom quality rating (for example, 1–5).
+    let bathroomRating: Int
 
-    // Initialize the annotation with our Bathroom data model
-    init(bathroom: Bathroom) {
-        self.bathroom = bathroom
+    /// Initializes a new BathroomAnnotation.
+    init(title: String,
+         code: String,
+         notes: String,
+         isUnisex: Bool,
+         cleanRating: Int,
+         bathroomRating: Int,
+         coordinate: CLLocationCoordinate2D) {
+        
+        self.code = code
+        self.notes = notes
+        self.isUnisex = isUnisex
+        self.cleanRating = cleanRating
+        self.bathroomRating = bathroomRating
         
         super.init()
         
-        // Set the properties for the map annotation
-        self.coordinate = bathroom.coordinate
-        self.title = bathroom.name
+        // Properties inherited from MKPointAnnotation
+        self.title = title
+        self.coordinate = coordinate
         
-        // Create a subtitle from the other details
-        var subtitleText = ""
-        if let code = bathroom.code, !code.isEmpty {
-            subtitleText += "Code: \(code)"
-        }
-        if bathroom.isUnisex {
-            subtitleText += (subtitleText.isEmpty ? "" : " | ") + "Unisex"
-        }
-        self.subtitle = subtitleText
+        // Short info in the standard callout.
+        self.subtitle = "Code: \(code) • Clean: \(cleanRating)/5"
     }
 }
-
